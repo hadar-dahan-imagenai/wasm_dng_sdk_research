@@ -11,8 +11,8 @@
 // The standard libjpeg headers don't seem to contain an 'extern "C"' (so it's
 // required when including them from C++).
 extern "C" {
-// #include "jpeglib.h" //todo hadar
-// #include "jerror.h"//todo hadar
+#include "jpeglib.h"
+#include "jerror.h"
 }
 
 #endif  // __dng_jpeglib__

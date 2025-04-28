@@ -1,37 +1,110 @@
 <html>
 <head>
+  <meta charset="UTF-8">
+  <title>OffscreenCanvas Example</title>
   <script>
     // const worker = new Worker("worker.js");
     const worker = new Worker('worker.js', { type: 'module' });
 
+    // function onClick() {
+    //
+    //   const f = document.getElementById("in-file").files[0];
+    //   console.log("📤 Sending file to worker:", f);
+    //
+    //   worker.postMessage([ f ]);
+    // }
     function onClick() {
+      const fileList = document.getElementById("in-file").files;
+      // console.log("📤 Sending files to worker:", fileList);
 
-      const f = document.getElementById("in-file").files[0];
-      console.log("📤 Sending file to worker:", f);
+      // const files = Array.from(fileList); // convert FileList to array
+      const files = [fileList[0]]; // pick the first file
 
-      worker.postMessage([ f ]);
+      const htmlCanvas = document.getElementById('myCanvas');
+      const offscreenCanvas = htmlCanvas.transferControlToOffscreen();
+
+      worker.postMessage({ files, canvas: offscreenCanvas }, [offscreenCanvas]);
+      // worker.postMessage({ files });
     }
-    // 🔥 Receive message from worker
+
+    //multiple files
     worker.onmessage = (e) => {
       const data = e.data;
 
-      if (data.result) {
-        console.log("✅ Main thread received result:", data.result);
-        alert("File read result:\n" + data.result);
+        // console.log("worker data.type", data.type)
+      if (data.type === "log") {
+        const logDiv = document.getElementById('worker-logs');
+        if (logDiv) {
+          // console.log("logDiv", logDiv)
+
+          const p = document.createElement('p');
+          p.textContent = data.log;
+          logDiv.appendChild(p);
+          // console.log("Adding message:", data.log);
+          // console.log("p element:", p);
+          // console.log("logDiv before append:", logDiv.innerHTML);
+        }
+      }
+      if (data.result && Array.isArray(data.result)) {
+        console.log("✅ Results from worker:");
+        data.result.forEach(r => {
+          if (r.error) {
+            console.error(`❌ ${r.file}: ${r.error}`);
+          } else {
+            console.log(`✅ ${r.file}: ${r.result}`);
+          }
+        });
       } else if (data.log) {
-        console.log("📥 Worker log:", data.log);
+        // console.log("📥 Worker log:", data.log);
       } else if (data.error) {
-        console.error("❌ Error from worker:", data.error);
-        alert("Worker Error: " + data.error);
+        console.error("❌ Worker error:", data.error);
       } else {
-        console.log("📨 Worker sent unknown message:", data);
+        console.log("📨 Worker message:", data);
       }
     };
+
+
+    //one file
+    // 🔥 Receive message from worker
+    // worker.onmessage = (e) => {
+    //   const data = e.data;
+    //
+    //   if (data.result) {
+    //     console.log("✅ Main thread received result:", data.result);
+    //     alert("File read result:\n" + data.result);
+    //   } else if (data.log) {
+    //     console.log("📥 Worker log:", data.log);
+    //   } else if (data.error) {
+    //     console.error("❌ Error from worker:", data.error);
+    //     alert("Worker Error: " + data.error);
+    //   } else {
+    //     console.log("📨 Worker sent unknown message:", data);
+    //   }
+    // };
 
   </script>
 </head>
 <body>
-<input type="file" id="in-file" />
+<!--<input type="file" id="in-file" />-->
+<input type="file" id="in-file" multiple />
+
 <input type="button" onClick="onClick()" value="ok" />
+<div id="worker-logs" style="font-family: monospace; padding: 10px; border: 1px solid black; background: #f9f9f9; color: #333; min-height: 50px;"></div>
+
+<canvas id="myCanvas" width="800" height="600"></canvas>
+
+<!--<script src="build/dng_example.js"></script> &lt;!&ndash; Your compiled WASM glue code &ndash;&gt;-->
+<script type="module">
+  import init from './build/dng_example.js';
+
+  init().then((Module) => {
+    console.log("✅ WASM loaded", Module);
+    window.dngModule = Module; // optional: save globally
+  }).catch((err) => {
+    console.error("❌ Failed to initialize WASM", err);
+  });
+</script>
+
+
 </body>
 </html>

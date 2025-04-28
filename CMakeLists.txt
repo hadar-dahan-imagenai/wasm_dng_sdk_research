@@ -43,19 +43,21 @@ endif()
 
 #####
 #
-#include_directories(${CMAKE_SOURCE_DIR}/dng_sdk_1_7/libjpeg)
-## libjpeg integration
-#file(GLOB JPEG_SOURCES
-#        "${CMAKE_SOURCE_DIR}/dng_sdk_1_7/libjpeg/*.c"
-#)
-#list(FILTER JPEG_SOURCES EXCLUDE REGEX ".*jmemdos.c$")
-#list(FILTER JPEG_SOURCES EXCLUDE REGEX ".*jmemmac.c$")
-#
-#add_library(dng_jpeg STATIC ${JPEG_SOURCES})
-#
-#target_include_directories(dng_jpeg PUBLIC
-#        ${CMAKE_SOURCE_DIR}/dng_sdk_1_7/libjpeg
-#)
+include_directories(${CMAKE_SOURCE_DIR}/dng_sdk_1_7/libjpeg)
+# libjpeg integration
+file(GLOB JPEG_SOURCES
+        "${CMAKE_SOURCE_DIR}/dng_sdk_1_7/libjpeg/*.c"
+)
+list(FILTER JPEG_SOURCES EXCLUDE REGEX ".*jmemdos.c$")
+list(FILTER JPEG_SOURCES EXCLUDE REGEX ".*jmemmac.c$")
+list(FILTER JPEG_SOURCES EXCLUDE REGEX ".*example.c$")
+list(FILTER JPEG_SOURCES EXCLUDE REGEX ".*jmemname.c$") # <---- NEW
+
+add_library(dng_jpeg STATIC ${JPEG_SOURCES})
+
+target_include_directories(dng_jpeg PUBLIC
+        ${CMAKE_SOURCE_DIR}/dng_sdk_1_7/libjpeg
+)
 
 # -------------------------------------
 # ZLIB from source (like WAF does)
@@ -149,7 +151,7 @@ target_compile_definitions(xmp_files PUBLIC
 
    #     qVisualC=1
 
-        qDNGUseLibJPEG=0
+        qDNGUseLibJPEG=1
         BIB_MULTI_THREAD=1
         UNICODE
         _UNICODE
@@ -189,7 +191,7 @@ target_compile_definitions(xmp_core PUBLIC
     #    NOMINMAX
      #   qVisualC=1
 
-        qDNGUseLibJPEG=0
+        qDNGUseLibJPEG=1
         BIB_MULTI_THREAD=1
         UNICODE
         _UNICODE
@@ -259,7 +261,7 @@ target_compile_definitions(dng_sdk PUBLIC
         UNICODE
         _UNICODE
 
-        qDNGUseLibJPEG=0
+        qDNGUseLibJPEG=1
         BIB_MULTI_THREAD=1
         UNICODE
         _UNICODE
@@ -292,7 +294,7 @@ target_link_libraries(dng_sdk PUBLIC
 #        dng_zlib
         xmp_core
         xmp_files
-#        dng_jpeg
+        dng_jpeg
         jxl
         jxl_threads
         jxl_cms
