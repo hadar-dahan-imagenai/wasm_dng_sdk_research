@@ -13,7 +13,24 @@
     //
     //   worker.postMessage([ f ]);
     // }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      // Now HTML elements are guaranteed loaded
+
+      document.getElementById('dcp-file').addEventListener('change', (event) => {
+        const file = event.target.files[0];
+        console.log('📤 GOT DCP file:', file);
+
+        if (file) {
+          console.log('📤 Sending DCP file to worker:', file);
+          worker.postMessage({ type: 'dcp', file: file });
+        }
+      });
+    });
+
+
     function onClick() {
+
       const fileList = document.getElementById("in-file").files;
       // console.log("📤 Sending files to worker:", fileList);
 
@@ -86,7 +103,12 @@
 </head>
 <body>
 <!--<input type="file" id="in-file" />-->
+<label>📸 Select Images:</label>
 <input type="file" id="in-file" multiple />
+
+<label>🎨 Load DCP Profile:</label>
+<input type="file" id="dcp-file" />
+
 
 <input type="button" onClick="onClick()" value="ok" />
 <div id="worker-logs" style="font-family: monospace; padding: 10px; border: 1px solid black; background: #f9f9f9; color: #333; min-height: 50px;"></div>

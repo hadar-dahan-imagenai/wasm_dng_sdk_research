@@ -11,8 +11,22 @@ initModule({
     //trying multiple files
     self.onmessage = async function (e) {
       // const files = e.data.files;
-      const { files, canvas } = e.data;
-    console.log("files", files)
+      const { files, canvas, type } = e.data;
+      console.log("1111", e.data)
+      if (type === 'dcp') {
+
+        const file = e.data.file;
+        console.log("file111", file)
+
+        const arrayBuffer = await file.arrayBuffer();
+        const uint8Array = new Uint8Array(arrayBuffer);
+
+        Module.FS_createPath('/', 'profiles', true, true);
+        Module.FS_createDataFile('/profiles', 'Canon_EOS_R6_Adobe_Standard.dcp', uint8Array, true, true);
+
+        console.log('✅ DCP file loaded into Worker\'s MEMFS');
+        return
+      }
       try {
         Module.FS.mkdir('/work');
       } catch (err) {

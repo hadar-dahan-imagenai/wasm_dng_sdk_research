@@ -457,14 +457,32 @@ std::vector<char> generateEditing(const std::string &path, const std::string &ou
         std::cout << "writeTiffTemplate failed " << e.what() << std::endl;
     }
 }
+// std::string get_dcp_file (const std::string &dcp_file_path )
+// {
+//
+//     std::cout << "get_dcp_file " << dcp_file_path << "\n";
+//     try {
+//         // dng_file_stream stream(dcp_file_path.c_str(), false, dng_stream::kBigBufferSize);
+//         return dcp_file_path;
+//     }
+//     catch (const std::exception &e) {
+//         std::cout << "exception caught in  read_file" << e.what() << "\n";
+//         assert(false);
+//     }
+//     // std::string line;
+//     // std::getline(f, line);
+//     // std::cout << "line " << line << "\n";
+//     // return line;
+//     return "finish reading files!";
+// }
 
 std::vector<char> read_file(const std::string &fn)
 {
-    // const std::string hardcoded_dcp_path = "/Canon_EOS_R6_Adobe_Standard.dcp";
+    const std::string hardcoded_dcp_path = "/profiles/Canon_EOS_R6_Adobe_Standard.dcp";
 
     std::cout << "read_file " << fn << "\n";
     try {
-        auto vec = generateEditing(fn, "/work/output.jpg", ".");
+        auto vec = generateEditing(fn, "/work/output.jpg", hardcoded_dcp_path);
         return vec;
         // getInitWbPerFile(fn);
 
@@ -482,24 +500,24 @@ std::vector<char> read_file(const std::string &fn)
     // return "finish reading files!";
 }
 
-std::string get_dcp_file (const std::string &dcp_file_path )
-{
-
-    std::cout << "get_dcp_file " << dcp_file_path << "\n";
-    try {
-        // dng_file_stream stream(dcp_file_path.c_str(), false, dng_stream::kBigBufferSize);
-        return dcp_file_path;
-    }
-    catch (const std::exception &e) {
-        std::cout << "exception caught in  read_file" << e.what() << "\n";
-        assert(false, "exception caught in  read_file" );
-    }
-    // std::string line;
-    // std::getline(f, line);
-    // std::cout << "line " << line << "\n";
-    // return line;
-    return "finish reading files!";
-}
+// std::string get_dcp_file (const std::string &dcp_file_path )
+// {
+//
+//     std::cout << "get_dcp_file " << dcp_file_path << "\n";
+//     try {
+//         // dng_file_stream stream(dcp_file_path.c_str(), false, dng_stream::kBigBufferSize);
+//         return dcp_file_path;
+//     }
+//     catch (const std::exception &e) {
+//         std::cout << "exception caught in  read_file" << e.what() << "\n";
+//         assert(false);
+//     }
+//     // std::string line;
+//     // std::getline(f, line);
+//     // std::cout << "line " << line << "\n";
+//     // return line;
+//     return "finish reading files!";
+// }
 //
 // std::string read_file(const std::string &fn)
 // {
@@ -527,7 +545,7 @@ std::string get_dcp_file (const std::string &dcp_file_path )
 // }
 
 EMSCRIPTEN_BINDINGS(my_module) {
-    function("get_dcp_file", &get_dcp_file);
+    // function("get_dcp_file", &get_dcp_file);
     function("read_file", &read_file);
     register_vector<char>("vector<char>");
 }
