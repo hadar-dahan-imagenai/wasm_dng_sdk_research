@@ -2,7 +2,8 @@
 import initModule from './build/dng_example.js';
 
 let Module;
-
+let imagent_canvas;
+let first_time = true;
 initModule({
   onRuntimeInitialized() {
     console.log("✅ WASM Module ready inside worker");
@@ -11,12 +12,17 @@ initModule({
     //trying multiple files
     self.onmessage = async function (e) {
       // const files = e.data.files;
-      const { files, canvas, type } = e.data;
-      console.log("1111", e.data)
+      let { files, canvas, type, exposure  } = e.data;
+
+      if (imagent_canvas === undefined || !imagent_canvas)
+      {
+        imagent_canvas = canvas
+      }
+
       if (type === 'dcp') {
 
+
         const file = e.data.file;
-        console.log("file111", file)
 
         const arrayBuffer = await file.arrayBuffer();
         const uint8Array = new Uint8Array(arrayBuffer);
@@ -28,26 +34,29 @@ initModule({
         return
       }
       try {
+        if (first_time)
         Module.FS.mkdir('/work');
       } catch (err) {
         console.warn("📁 mkdir failed (maybe already exists)", err);
       }
 
       try {
-
-        Module.FS.mount(Module.WORKERFS, {files: files, canvas: canvas}, '/work');
+        if (first_time)
+        Module.FS.mount(Module.WORKERFS, {files: files, canvas: imagent_canvas}, '/work');
         // console.log("📨 Worker received files:", files.length);
 
         const startTime = performance.now(); // ⏱️ start the clock
 
         const results = [];
-        console.log("files", files)
         for (const file of files) {
           try {
+            // console.log("📨 file:", file);
+            if (exposure === undefined) exposure =0;
+            const vec = new Module.VectorUint8();
 
-            const result = Module.read_file('/work/' + file.name);
-            console.log("result",result);
-// Extract bytes manually
+            Module.read_file('/work/' + file.name,vec, exposure);
+            const result = vec;
+        // Extract bytes manually
             const size = result.size();
             const rawArray = [];
 
@@ -55,18 +64,18 @@ initModule({
               rawArray.push(result.get(i));
             }
 
-            console.log(rawArray);            // Create Blob from result
             const byteArray = new Uint8Array(rawArray);
 
             const blob = new Blob([byteArray], { type: 'image/jpeg' });
             const imageBitmap = await createImageBitmap(blob);
-          // Now draw it
-            const ctx = canvas.getContext('2d');
-            canvas.width = imageBitmap.width;
-            canvas.height = imageBitmap.height;
+
+            const ctx = imagent_canvas.getContext('2d');
+            ctx.clearRect(0, 0, imageBitmap.width, imageBitmap.height);
+            imagent_canvas.width = imageBitmap.width;
+            imagent_canvas.height = imageBitmap.height;
             ctx.drawImage(imageBitmap, 0, 0);
 
-
+            first_time = false
             results.push({file: file.name, result});
           } catch (err) {
             console.log({"error": err})
@@ -74,9 +83,9 @@ initModule({
           }
         }
         const endTime = performance.now(); // ⏱️ stop the clock
-        const totalTime = endTime - startTime;
+        // const totalTime = endTime - startTime;
 
-        self.postMessage({type: "log", log: `Total time: ${totalTime.toFixed(2)} ms`});
+        // self.postMessage({type: "log", log: `Total time: ${totalTime.toFixed(2)} ms`});
 
       } catch (err) {
         console.error("❌ Error mounting or reading:", err);

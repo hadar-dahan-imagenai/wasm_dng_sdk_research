@@ -61,157 +61,14 @@ static int extractInitialTemperatureAndTint(dng_host& host, std::unique_ptr<dng_
 
     return 1;
 }
-dng_file_stream* openFileStream(const std::string &outFilename) {
 
-    try {
-        std::cout << "before  fopen " << outFilename << "\n";
-
-        FILE* f = fopen(outFilename.c_str(), "w");
-
-        std::cout << "after fopen " << outFilename << "\n";
-        bool x = f == nullptr;
-        std::cout << "f is null? " << x << "\n";
-        return new dng_file_stream(f );
-        // return new dng_file_stream(outFilename.c_str(), true);
-    }
-    catch (dng_exception& e) {
-        // std::stringstream error; error << "Error opening output file! (" << e.ErrorCode() << ": " << (e.ErrorCode()) << ")";
-        throw std::runtime_error("error.str()");
-        // throw std::runtime_error(error.str());
-    }
-}
-
-void writeJpeg(const std::string& outFilename, real64 exposure, real64 shadows, const dng_xy_coord& xyCoordinate,  dng_host& host, std::unique_ptr<dng_negative>&neg) {
-    // -----------------------------------------------------------------------------------------
-    // Render JPEG
-
-    // FIXME: we should render and integrate a thumbnail too
-    // if (m_publishFunction != NULL) m_publishFunction("rendering JPEG");
+void writeTiffTemplate(const std::string& outFilename, std::unordered_map<std::string, real64>& editingParamsMap, dng_host& host, std::unique_ptr<dng_negative>&neg, std::vector<uint8>& vec) {
+    // std::cout << "writeTiffTemplate strat " << std::endl;
 
     dng_render negRender(host, *neg);
-    negRender.SetWhiteXY(xyCoordinate);
-
-    if (exposure) {
-        negRender.SetExposure(exposure);
-    }
-    if (shadows) {
-        negRender.SetShadows(shadows);
-    }    AutoPtr<dng_image> negImage(negRender.Render());
-    dng_string appNameVersion("mini-lr-poc"); appNameVersion.Append(" "); appNameVersion.Append("mini-lr-0.1");
-
-    AutoPtr<dng_jpeg_preview> jpeg(new dng_jpeg_preview());
-    jpeg->fInfo.fApplicationName.Set_ASCII(appNameVersion.Get());
-    jpeg->fInfo.fApplicationVersion.Set_ASCII(appNameVersion.Get());
-    dng_date_time_info m_dateTimeNow;
-    CurrentDateTimeAndZone(m_dateTimeNow);
-    jpeg->fInfo.fDateTime = m_dateTimeNow.Encode_ISO_8601();
-    jpeg->fInfo.fColorSpace = previewColorSpace_sRGB;
-    dng_image_writer jpegWriter; jpegWriter.EncodeJPEGPreview(host, *negImage.Get(), *jpeg.Get(), 8);
-    // -----------------------------------------------------------------------------------------
-    // Write JPEG-image to file
-    // if (m_publishFunction != NULL) m_publishFunction("writing JPEG file");
-    // AutoPtr<dng_file_stream> targetFile(openFileStream(outFilename));
-    // AutoPtr<dng_memory_stream> targetFile(host.Allocator ());
-    dng_memory_stream targetFile (host.Allocator ());
-
-    const uint8 soiTag[]         = {0xff, 0xd8};
-    const uint8 app1Tag[]        = {0xff, 0xe1};
-    const char* app1ExifHeader   = "Exif\0";
-    const int exifHeaderLength   = 6;
-    const uint8 tiffHeader[]     = {0x49, 0x49, 0x2a, 0x00, 0x08, 0x00, 0x00, 0x00};
-    const char* app1XmpHeader    = "http://ns.adobe.com/xap/1.0/";
-    const int xmpHeaderLength    = 29;
-    const char* app1ExtXmpHeader = "http://ns.adobe.com/xmp/extension/";
-    const int extXmpHeaderLength = 35;
-    const int jfifHeaderLength   = 20;
-    // hack: we're overloading the class just to get access to protected members (DNG-SDK doesn't exposure full Put()-function on these)
-    class ExifIfds : public exif_tag_set {
-    public:
-        dng_tiff_directory* getExifIfd() {return &fExifIFD;}
-        dng_tiff_directory* getGpsIfd() {return &fGPSIFD;}
-        ExifIfds(dng_tiff_directory &directory, const dng_exif &exif, dng_metadata* md) :
-            exif_tag_set(directory, exif, md->IsMakerNoteSafe(), md->MakerNoteData(), md->MakerNoteLength(), false) {}
-    };
-    try {
-        // -----------------------------------------------------------------------------------------
-        // Build IFD0, ExifIFD, GPSIFD
-        dng_metadata* metadata = &neg->Metadata();
-
-        metadata->GetXMP()->Set(XMP_NS_DC, "format", "image/jpeg");
-
-        dng_tiff_directory mainIfd;
-        tag_uint16 tagOrientation(tcOrientation, metadata->BaseOrientation().GetTIFF());
-        mainIfd.Add(&tagOrientation);
-        // this is non-standard I believe but let's leave it anyway
-        tag_iptc tagIPTC(metadata->IPTCData(), metadata->IPTCLength());
-        if (tagIPTC.Count()) mainIfd.Add(&tagIPTC);
-        // this creates exif and gps Ifd and also adds the following to mainIfd:
-        // datetime, imagedescription, make, model, software, artist, copyright, exifIfd, gpsIfd
-        ExifIfds exifSet(mainIfd, *metadata->GetExif(), metadata);
-        exifSet.Locate(sizeof(tiffHeader) + mainIfd.Size());
-        // we're ignoring YCbCrPositioning, XResolution, YResolution, ResolutionUnit
-        // YCbCrCoefficients, ReferenceBlackWhite
-        // -----------------------------------------------------------------------------------------
-        // Build IFD0, ExifIFD, GPSIFD
-        // Write SOI-tag
-        targetFile.Put(soiTag, sizeof(soiTag));
-        // Write APP1-Exif section: Header...
-        targetFile.Put(app1Tag, sizeof(app1Tag));
-        targetFile.SetBigEndian(true);
-        targetFile.Put_uint16(sizeof(uint16) + exifHeaderLength + sizeof(tiffHeader) + mainIfd.Size() + exifSet.Size());
-        targetFile.Put(app1ExifHeader, exifHeaderLength);
-        // ...and TIFF structure
-        targetFile.SetLittleEndian(true);
-        targetFile.Put(tiffHeader, sizeof(tiffHeader));
-        mainIfd.Put(targetFile, dng_tiff_directory::offsetsRelativeToExplicitBase, sizeof(tiffHeader));
-        exifSet.getExifIfd()->Put(targetFile, dng_tiff_directory::offsetsRelativeToExplicitBase, sizeof(tiffHeader) + mainIfd.Size());
-        exifSet.getGpsIfd()->Put(targetFile, dng_tiff_directory::offsetsRelativeToExplicitBase, sizeof(tiffHeader) + mainIfd.Size() + exifSet.getExifIfd()->Size());
-        // Write APP1-XMP if required
-        if (metadata->GetXMP()) {
-            AutoPtr<dng_memory_block> stdBlock, extBlock;
-            dng_string extDigest;
-            metadata->GetXMP()->PackageForJPEG(stdBlock, extBlock, extDigest);
-            targetFile.Put(app1Tag, sizeof(app1Tag));
-            targetFile.SetBigEndian(true);
-            targetFile.Put_uint16(sizeof(uint16) + xmpHeaderLength + stdBlock->LogicalSize());
-            targetFile.Put(app1XmpHeader, xmpHeaderLength);
-            targetFile.Put(stdBlock->Buffer(), stdBlock->LogicalSize());
-            if (extBlock.Get()) {
-                // we only support one extended block, if XMP is >128k the file will probably be corrupted
-                targetFile.Put(app1Tag, sizeof(app1Tag));
-                targetFile.SetBigEndian(true);
-                targetFile.Put_uint16(sizeof(uint16) + extXmpHeaderLength + extDigest.Length() + sizeof(uint32) + sizeof(uint32) + extBlock->LogicalSize());
-                targetFile.Put(app1ExtXmpHeader, extXmpHeaderLength);
-                targetFile.Put(extDigest.Get(), extDigest.Length());
-                targetFile.Put_uint32(extBlock->LogicalSize());
-                targetFile.Put_uint32(stdBlock->LogicalSize());
-                targetFile.Put(extBlock->Buffer(), extBlock->LogicalSize());
-            }
-        }
-        // write remaining JPEG structure/data from libjpeg minus the JFIF-header
-        targetFile.Put((uint8*) jpeg->CompressedData().Buffer() + jfifHeaderLength, jpeg->CompressedData().LogicalSize() - jfifHeaderLength);
-        targetFile.Flush();
-    }
-    catch (dng_exception& e) {
-        std::cout << "error in jpeg writer" << std::endl;
-        // std::stringstream error; error << "Error while writing JPEG-file! (" << e.ErrorCode() << ": " << getDngErrorMessage(e.ErrorCode()) << ")";
-        // throw std::runtime_error(error.str());
-    }
-}
 
 
-std::vector<char> writeTiffTemplate(const std::string& outFilename, std::unordered_map<std::string, real64>& editingParamsMap, dng_host& host, std::unique_ptr<dng_negative>&neg) {
-    // -----------------------------------------------------------------------------------------
-    // Render TIFF
-
-    // if (m_publishFunction != NULL) m_publishFunction("rendering TIFF");
-    std::cout << "writeTiffTemplate strat " << std::endl;
-
-    dng_render negRender(host, *neg);
-    // dng_render negRender(*m_host, *m_negProcessor->getNegative());
-
-
-    negRender.SetFinalPixelType(ttShort);
+    // negRender.SetFinalPixelType(ttShort); //need this???
 
     std::vector<int> initTemp(2);
     // if (!editingParamsMap.contains("temp") || !editingParamsMap.contains("tint")) {
@@ -231,33 +88,12 @@ std::vector<char> writeTiffTemplate(const std::string& outFilename, std::unorder
     if (editingParamsMap.find("shadows") != editingParamsMap.end()) {
         negRender.SetShadows(editingParamsMap.at("shadows"));
     }
-    std::cout << "writeTiffTemplate before calling Render() " << std::endl;
 
     AutoPtr<dng_image> negImage(negRender.Render());
-    std::cout << "writeTiffTemplate after calling Render() " << std::endl;
 
-    // -----------------------------------------------------------------------------------------
-    // Write Tiff-image to file
-
-    // AutoPtr<dng_file_stream> targetFile(openFileStream(outFilename));
-    // AutoPtr<dng_memory_stream> target(host.Allocator());
     dng_memory_stream stream (host.Allocator ());
 
-    std::cout << "writeTiffTemplate targetFile " << outFilename <<  std::endl;
-
-    // dng_pixel_buffer pixel_buf;
-    // dng_simple_image& y = dynamic_cast<dng_simple_image&>(*negImage);
-    //
-    // // dng_simple_image *i = &dstImage;
-    // y.GetPixelBuffer(pixel_buf);
-    // WriteSeparatePlanes3(pixel_buf, y.Bounds().W(), y.Bounds().H());
-   // if (m_publishFunction != NULL) m_publishFunction("writing TIFF file");
-
     try {
-        // dng_image_writer tiffWriter;
-        // auto metadata = &neg->Metadata();
-        std::cout << "before  AutoPtr<dng_jpeg_preview> jpeg setup" << std::endl;
-
         AutoPtr<dng_jpeg_preview> jpeg(new dng_jpeg_preview());
         dng_string appNameVersion("mini-lr-poc"); appNameVersion.Append(" "); appNameVersion.Append("mini-lr-0.1");
         // dng_string appNameVersion(m_appName); appNameVersion.Append(" "); appNameVersion.Append(m_appVersion.Get());
@@ -269,40 +105,26 @@ std::vector<char> writeTiffTemplate(const std::string& outFilename, std::unorder
         jpeg->fInfo.fDateTime = m_dateTimeNow.Encode_ISO_8601();
         jpeg->fInfo.fColorSpace = previewColorSpace_sRGB;
 
-        std::cout << "before  EncodeJPEGPreview" << std::endl;
-
         dng_image_writer jpegWriter; jpegWriter.EncodeJPEGPreview(host, *negImage.Get(), *jpeg.Get(), 8);
-        std::cout << "after  EncodeJPEGPreview" << std::endl;
 
         auto& block = jpeg->CompressedData();
         auto buf = jpeg->CompressedData().Buffer_uint8();
         size_t size = block.LogicalSize();
-        std::cout << "before assigning vec  EncodeJPEGPreview" << std::endl;
 
-        std::vector<char> vec(buf, buf + size);
-        return vec;
-        // tiffWriter.WriteTIFF(host, stream, *negImage.Get(), piRGB, ccUncompressed,
-        //                      metadata, &dng_space_sRGB::Get());
-        // std::cout << "after   tiffWriter.WriteTIFF" << std::endl;
-        //
-        // // fs::path(outFilename).replace_extension(".jpg");
-        // writeJpeg("out.jpg", negRender.Exposure(), negRender.Shadows(), negRender.WhiteXY(), host, neg);
+        std::vector<uint8> new_vec(buf, buf + size);
+        vec = new_vec;
+        // return vec;
     }
     catch (dng_exception& e) {
        std::cout << "Error while writing TIFF-file! " << e.ErrorCode() << std::endl;
     }
 }
 void renderImage(std::unique_ptr<dng_negative>&neg, dng_host &host) {
-    // -----------------------------------------------------------------------------------------
-    // Render image
 
     try {
-        // if (m_publishFunction != NULL) m_publishFunction("building preview - linearising");
+        neg->SynchronizeMetadata();
 
         neg->BuildStage2Image(host);   // Compute linearized and range-mapped image
-
-        // if (m_publishFunction != NULL) m_publishFunction("building preview - demosaicing");
-
         neg->BuildStage3Image(host);   // Compute demosaiced image (used by preview and thumbnail)
     }
     catch (dng_exception& e) {
@@ -315,11 +137,12 @@ void dngProcessor(const std::string &path, dng_host &host, std::unique_ptr<dng_n
     // Re-read source DNG using DNG SDK - we're ignoring the LibRaw/Exiv2 data structures from now on
     try {
         dng_file_stream stream(path.c_str());
-
         dng_info info;
         info.Parse(host, stream);
         info.PostParse(host);
         if (!info.IsValidDNG()) throw dng_exception(dng_error_bad_format);
+
+        // neg.reset(host.Make_dng_negative());//init neg after host is ready??
 
         neg->Parse(host, stream, info);
         neg->PostParse(host, stream, info);
@@ -416,116 +239,52 @@ void buildNegative(const std::string &dcpFilename, bool customIfDcpMissing, std:
 
     // m_negProcessor->buildDNGImage(); //maybe not needed because wew use dng nd not raw
 }
+bool first_time = true;
+void generateEditing(const std::string &path, const std::string &output, const std::string &dcpFile,std::vector<uint8>& vec, int exposure=0) {
+    // std::cout << "generateEditing " << "\n";
 
-std::vector<char> generateEditing(const std::string &path, const std::string &output, const std::string &dcpFile) {
-    std::cout << "generateEditing " << "\n";
-
-    dng_host h;
-    std::unique_ptr<dng_negative> negative(h.Make_dng_negative());
-
-    try {
+    static dng_host h;
+    // std::unique_ptr<dng_negative> negative;
+    static  std::unique_ptr<dng_negative> negative(h.Make_dng_negative());
+    // negative = negative->Make(h);
+    // std::unique_ptr<dng_negative> negative;
+    if (first_time) {
         dngProcessor(path, h, negative);
-    }
-    catch (const std::exception &e)
-    {
-        std::cout << "dngProcessor failed" << e.what() << std::endl;
-    }
-    try {
         buildNegative(dcpFile, false, negative);
-    }
-    catch (const std::exception &e)
-    {
-        std::cout << "buildNegative failed"<< e.what() << std::endl;
-    }
-    try {
         renderImage(negative, h);
+        first_time = false;
+    }
 
-    }
-    catch (const std::exception &e)
-    {
-        std::cout << "renderImage failed"<< e.what() << std::endl;
-    }
     std::unordered_map<std::string, real64> editingParamsMap;
-    editingParamsMap["exposure"] = 0;
+    editingParamsMap["exposure"] = exposure;
     try {
-        std::vector<char> vec  = writeTiffTemplate(output, editingParamsMap, h, negative);
-        std::cout << "vec size " << vec.size() << std::endl;
-        return vec;
-
+        writeTiffTemplate(output, editingParamsMap, h, negative, vec);
     }
     catch (const std::exception &e) {
         std::cout << "writeTiffTemplate failed " << e.what() << std::endl;
     }
 }
-// std::string get_dcp_file (const std::string &dcp_file_path )
-// {
-//
-//     std::cout << "get_dcp_file " << dcp_file_path << "\n";
-//     try {
-//         // dng_file_stream stream(dcp_file_path.c_str(), false, dng_stream::kBigBufferSize);
-//         return dcp_file_path;
-//     }
-//     catch (const std::exception &e) {
-//         std::cout << "exception caught in  read_file" << e.what() << "\n";
-//         assert(false);
-//     }
-//     // std::string line;
-//     // std::getline(f, line);
-//     // std::cout << "line " << line << "\n";
-//     // return line;
-//     return "finish reading files!";
-// }
 
-std::vector<char> read_file(const std::string &fn)
-{
+void read_file(const std::string &fn,std::vector<uint8>& vec, int exposure=0) {
     const std::string hardcoded_dcp_path = "/profiles/Canon_EOS_R6_Adobe_Standard.dcp";
 
-    std::cout << "read_file " << fn << "\n";
+    // std::cout << "read_file " << fn << "\n";
     try {
-        auto vec = generateEditing(fn, "/work/output.jpg", hardcoded_dcp_path);
-        return vec;
-        // getInitWbPerFile(fn);
-
+        generateEditing(fn, "/work/output.jpg", hardcoded_dcp_path, vec, exposure);
     }
     catch (const std::exception &e) {
         std::cout << "exception caught in  read_file" << e.what() << "\n";
         assert(false);
     }
-    std::ifstream f(fn);
-    // std::string line;
-    // std::getline(f, line);
-    // std::cout << "line " << line << "\n";
-    // return line;
-    return {};
-    // return "finish reading files!";
 }
 
-// std::string get_dcp_file (const std::string &dcp_file_path )
-// {
-//
-//     std::cout << "get_dcp_file " << dcp_file_path << "\n";
-//     try {
-//         // dng_file_stream stream(dcp_file_path.c_str(), false, dng_stream::kBigBufferSize);
-//         return dcp_file_path;
-//     }
-//     catch (const std::exception &e) {
-//         std::cout << "exception caught in  read_file" << e.what() << "\n";
-//         assert(false);
-//     }
-//     // std::string line;
-//     // std::getline(f, line);
-//     // std::cout << "line " << line << "\n";
-//     // return line;
-//     return "finish reading files!";
-// }
-//
+
 // std::string read_file(const std::string &fn)
 // {
 //
-//     std::cout << "read_file " << fn << "\n";
+//     // std::cout << "read_file " << fn << "\n";
 //     try {
-         // auto vec = generateEditing(fn, "/work/output.jpg", ".");
-         // getInitWbPerFile(fn);
+//          getInitWbPerFile(fn);
 //
 //     }
 //     catch (const std::exception &e) {
@@ -537,7 +296,29 @@ std::vector<char> read_file(const std::string &fn)
 //     // std::getline(f, line);
 //     // std::cout << "line " << line << "\n";
 //     // return line;
-//     return "finish reading files!";
+//     return "";
+//     // return "finish reading files!";
+// }
+
+// std::string read_file(const std::string &fn)
+// {
+//
+//     // std::cout << "read_file " << fn << "\n";
+//     try {
+//          getInitWbPerFile(fn);
+//
+//     }
+//     catch (const std::exception &e) {
+//         std::cout << "exception caught in  read_file" << e.what() << "\n";
+//         assert(false);
+//     }
+//     std::ifstream f(fn);
+//     // std::string line;
+//     // std::getline(f, line);
+//     // std::cout << "line " << line << "\n";
+//     // return line;
+//     return "";
+//     // return "finish reading files!";
 // }
 
 // EMSCRIPTEN_BINDINGS(hello) {
@@ -545,7 +326,8 @@ std::vector<char> read_file(const std::string &fn)
 // }
 
 EMSCRIPTEN_BINDINGS(my_module) {
-    // function("get_dcp_file", &get_dcp_file);
     function("read_file", &read_file);
-    register_vector<char>("vector<char>");
+    register_vector<uint8_t>("VectorUint8");
+
+    // register_vector<uint8>("vector<uint8>");
 }
