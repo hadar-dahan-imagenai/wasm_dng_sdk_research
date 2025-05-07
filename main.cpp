@@ -17,6 +17,7 @@
 #include <string>
 #include <iostream>
 #include <fstream>
+#include "../../libdng/dnghost.h"
 #include <emscripten/bind.h>
 
 #include <iostream>
@@ -27,12 +28,16 @@
 
 //namespace fs = std::filesystem;
 
+//rt includes
+#include <curves.h>
+#include <color.h>
+
 using namespace emscripten;
 template <typename T>
 T clamp(T val, T min_val, T max_val) {
     return std::max(min_val, std::min(val, max_val));
 }
-static dng_xy_coord calculateDefaultWhiteBalance(const std::unique_ptr<dng_negative>& neg, dng_host& host) {
+static dng_xy_coord calculateDefaultWhiteBalance(const std::unique_ptr<dng_negative>& neg, DngHost& host) {
     dng_render negRender(host, *neg);
     //based on dng_image_writer color_tag_set::color_tag_set
     if (neg->HasCameraWhiteXY ()){
@@ -47,7 +52,7 @@ static dng_xy_coord calculateDefaultWhiteBalance(const std::unique_ptr<dng_negat
     return dng_xy_coord{};
 }
 
-static int extractInitialTemperatureAndTint(dng_host& host, std::unique_ptr<dng_negative>&neg) {
+static int extractInitialTemperatureAndTint(DngHost& host, std::unique_ptr<dng_negative>&neg) {
     dng_xy_coord wbPoint = calculateDefaultWhiteBalance(neg, host);
     dng_temperature temperatureFromXy(wbPoint);
     int xy_to_tint = std::lround(temperatureFromXy.Tint());
@@ -62,38 +67,42 @@ static int extractInitialTemperatureAndTint(dng_host& host, std::unique_ptr<dng_
     return 1;
 }
 
-void writeTiffTemplate(const std::string& outFilename, std::unordered_map<std::string, real64>& editingParamsMap, dng_host& host, std::unique_ptr<dng_negative>&neg, std::vector<uint8>& vec) {
+void writeTiffTemplate(const std::string& outFilename, std::unordered_map<std::string, real64>& editingParamsMap, DngHost& host, std::unique_ptr<dng_negative>&neg, std::vector<uint8>& vec) {
     // std::cout << "writeTiffTemplate strat " << std::endl;
-
-    dng_render negRender(host, *neg);
-
-
-    // negRender.SetFinalPixelType(ttShort); //need this???
-
-    std::vector<int> initTemp(2);
-    // if (!editingParamsMap.contains("temp") || !editingParamsMap.contains("tint")) {
-    //     initTemp = getInitialTemperature(); // Call getInitialTemperature() only if missing values
-    // }
-    // Get temperature and tint from the map, or use default values if not found
-    // editingParamsMap["temp"] = editingParamsMap.contains("temp") ? editingParamsMap.at("temp") : initTemp[0];
-    // editingParamsMap["tint"] = editingParamsMap.contains("tint") ? editingParamsMap.at("tint") : initTemp[1];
-
-    // Create the temperature object and set the white balance
-    dng_temperature dngTemperature(editingParamsMap["temp"], editingParamsMap["tint"]);
-    negRender.SetWhiteXY(dngTemperature.Get_xy_coord());
-
-    if (editingParamsMap.find("exposure") != editingParamsMap.end()) {
-        negRender.SetExposure(editingParamsMap.at("exposure"));
-    }
-    if (editingParamsMap.find("shadows") != editingParamsMap.end()) {
-        negRender.SetShadows(editingParamsMap.at("shadows"));
-    }
-
-    AutoPtr<dng_image> negImage(negRender.Render());
-
-    dng_memory_stream stream (host.Allocator ());
-
     try {
+
+        dng_render negRender(host, *neg);
+
+
+        // negRender.SetFinalPixelType(ttShort); //need this???
+
+        std::vector<int> initTemp(2);
+        // if (!editingParamsMap.contains("temp") || !editingParamsMap.contains("tint")) {
+        //     initTemp = getInitialTemperature(); // Call getInitialTemperature() only if missing values
+        // }
+        // Get temperature and tint from the map, or use default values if not found
+        // editingParamsMap["temp"] = editingParamsMap.contains("temp") ? editingParamsMap.at("temp") : initTemp[0];
+        // editingParamsMap["tint"] = editingParamsMap.contains("tint") ? editingParamsMap.at("tint") : initTemp[1];
+
+        // Create the temperature object and set the white balance
+        dng_temperature dngTemperature(editingParamsMap["temp"], editingParamsMap["tint"]);
+        negRender.SetWhiteXY(dngTemperature.Get_xy_coord());
+
+        if (editingParamsMap.find("exposure") != editingParamsMap.end()) {
+            negRender.SetExposure(editingParamsMap.at("exposure"));
+        }
+        if (editingParamsMap.find("shadows") != editingParamsMap.end()) {
+            negRender.SetShadows(editingParamsMap.at("shadows"));
+        }
+            int contrast = 0;
+        if (editingParamsMap.find("contrast") != editingParamsMap.end()) {
+            contrast = (editingParamsMap.at("contrast"));
+        }
+
+        AutoPtr<dng_image> negImage(negRender.Render(contrast));
+        std::cout << "after Render" << std::endl;
+        dng_memory_stream stream (host.Allocator ());
+
         AutoPtr<dng_jpeg_preview> jpeg(new dng_jpeg_preview());
         dng_string appNameVersion("mini-lr-poc"); appNameVersion.Append(" "); appNameVersion.Append("mini-lr-0.1");
         // dng_string appNameVersion(m_appName); appNameVersion.Append(" "); appNameVersion.Append(m_appVersion.Get());
@@ -113,13 +122,12 @@ void writeTiffTemplate(const std::string& outFilename, std::unordered_map<std::s
 
         std::vector<uint8> new_vec(buf, buf + size);
         vec = new_vec;
-        // return vec;
     }
     catch (dng_exception& e) {
        std::cout << "Error while writing TIFF-file! " << e.ErrorCode() << std::endl;
     }
 }
-void renderImage(std::unique_ptr<dng_negative>&neg, dng_host &host) {
+void renderImage(std::unique_ptr<dng_negative>&neg, DngHost &host) {
 
     try {
         neg->SynchronizeMetadata();
@@ -133,14 +141,17 @@ void renderImage(std::unique_ptr<dng_negative>&neg, dng_host &host) {
 //        throw std::stdruntime_error(error.str());
     }
 }
-void dngProcessor(const std::string &path, dng_host &host, std::unique_ptr<dng_negative>&neg) {
+void dngProcessor(const std::string &path, DngHost &host, std::unique_ptr<dng_negative>&neg) {
     // Re-read source DNG using DNG SDK - we're ignoring the LibRaw/Exiv2 data structures from now on
     try {
         dng_file_stream stream(path.c_str());
         dng_info info;
         info.Parse(host, stream);
         info.PostParse(host);
-        if (!info.IsValidDNG()) throw dng_exception(dng_error_bad_format);
+        if (!info.IsValidDNG()) {
+            std::cout << "error in main.cpp- dngProcessor() 1" <<std::endl;
+            throw dng_exception(dng_error_bad_format);
+        }
 
         // neg.reset(host.Make_dng_negative());//init neg after host is ready??
 
@@ -150,15 +161,22 @@ void dngProcessor(const std::string &path, dng_host &host, std::unique_ptr<dng_n
         neg->ReadTransparencyMask(host, stream, info);
         neg->ValidateRawImageDigest(host);
     }
-    catch (const dng_exception &except) {throw except;}
-    catch (...) {throw dng_exception(dng_error_unknown);}
+    catch (const dng_exception &except) {
+        std::cout << "error in main.cpp- dngProcessor() 2, error code " <<except.ErrorCode() << std::endl;
+
+    }
+    catch (...) {
+        std::cout << "error in main.cpp- dngProcessor() 3" <<std::endl;
+
+        throw dng_exception(dng_error_unknown);
+    }
 }
 
 // static int getInitWbPerFile(const std::fs::path& path) {
 static int getInitWbPerFile(const std::string& path) {
     // std::cout << "getInitWbPerFile " << path << "\n";
 
-    dng_host h;
+    DngHost h;
     dng_file_stream stream(path.c_str(), false, dng_stream::kBigBufferSize);
 
     // dng file
@@ -240,55 +258,77 @@ void buildNegative(const std::string &dcpFilename, bool customIfDcpMissing, std:
     // m_negProcessor->buildDNGImage(); //maybe not needed because wew use dng nd not raw
 }
 bool first_time = true;
-void generateEditing(const std::string &path, const std::string &output, const std::string &dcpFile,std::vector<uint8>& vec, int exposure=0) {
+void generateEditing(const std::string &path, const std::string &output, const std::string &dcpFile,std::vector<uint8>& vec, std::unordered_map<std::string, real64> editingParamsMap) {
     // std::cout << "generateEditing " << "\n";
-
-    static dng_host h;
-    // std::unique_ptr<dng_negative> negative;
-    static  std::unique_ptr<dng_negative> negative(h.Make_dng_negative());
-    // negative = negative->Make(h);
-    // std::unique_ptr<dng_negative> negative;
-    if (first_time) {
-        dngProcessor(path, h, negative);
-        buildNegative(dcpFile, false, negative);
-        renderImage(negative, h);
-        first_time = false;
-    }
-
-    std::unordered_map<std::string, real64> editingParamsMap;
-    editingParamsMap["exposure"] = exposure;
     try {
+
+        static DngHost h;
+        dng_xmp_sdk::InitializeSDK();
+
+        // m_host.Reset(dynamic_cast<dng_host*>(new DngHost()));
+        h.SetSaveDNGVersion(dngVersion_SaveDefault);
+        h.SetSaveLinearDNG(false);
+        h.SetKeepOriginalFile(true);
+        // std::unique_ptr<dng_negative> negative;
+        static  std::unique_ptr<dng_negative> negative(h.Make_dng_negative());
+        // negative = negative->Make(h);
+        // std::unique_ptr<dng_negative> negative;
+        if (first_time) {
+            dngProcessor(path, h, negative);
+            buildNegative(dcpFile, false, negative);
+            renderImage(negative, h);
+            first_time = false;
+        }
+
         writeTiffTemplate(output, editingParamsMap, h, negative, vec);
+    }
+    catch (const dng_exception &e) {
+        std::cout << "writeTiffTemplate failed with dng_exception, error code is " << e.ErrorCode() << std::endl;
     }
     catch (const std::exception &e) {
         std::cout << "writeTiffTemplate failed " << e.what() << std::endl;
     }
+    catch (...) {
+        std::cout << "writeTiffTemplate failed ..." << std::endl;
+    }
 }
 
-void read_file(const std::string &fn,std::vector<uint8>& vec, int exposure=0) {
+void edit_file(const std::string &fn,std::vector<uint8>& vec, int exposure=0, int contrast=0) {
     const std::string hardcoded_dcp_path = "/profiles/Canon_EOS_R6_Adobe_Standard.dcp";
 
-    // std::cout << "read_file " << fn << "\n";
+    std::cout << "edit_file!!!!!!!!!!!!!!! " << fn << "\n";
+    std::unordered_map<std::string, real64> editingParamsMap;
+    editingParamsMap["exposure"] = exposure;
+    editingParamsMap["contrast"] = contrast;
     try {
-        generateEditing(fn, "/work/output.jpg", hardcoded_dcp_path, vec, exposure);
+        generateEditing(fn, "/work/output.jpg", hardcoded_dcp_path, vec, editingParamsMap);
+        std::cout << "edit_file DONE" << fn << "\n";
+
+    }
+    catch (const dng_exception& e) {
+        std::cout << "DNG Exception: " << e.ErrorCode() << std::endl;
+        // throw; // or handle gracefully
     }
     catch (const std::exception &e) {
-        std::cout << "exception caught in  read_file" << e.what() << "\n";
+        std::cout << "exception caught in  edit_file" << e.what() << "\n";
         assert(false);
+    }
+    catch (...) {
+        std::cout << "exception caught in  edit_file ..." << "\n";
     }
 }
 
 
-// std::string read_file(const std::string &fn)
+// std::string edit_file(const std::string &fn)
 // {
 //
-//     // std::cout << "read_file " << fn << "\n";
+//     // std::cout << "edit_file " << fn << "\n";
 //     try {
 //          getInitWbPerFile(fn);
 //
 //     }
 //     catch (const std::exception &e) {
-//         std::cout << "exception caught in  read_file" << e.what() << "\n";
+//         std::cout << "exception caught in  edit_file" << e.what() << "\n";
 //         assert(false);
 //     }
 //     std::ifstream f(fn);
@@ -300,16 +340,16 @@ void read_file(const std::string &fn,std::vector<uint8>& vec, int exposure=0) {
 //     // return "finish reading files!";
 // }
 
-// std::string read_file(const std::string &fn)
+// std::string edit_file(const std::string &fn)
 // {
 //
-//     // std::cout << "read_file " << fn << "\n";
+//     // std::cout << "edit_file " << fn << "\n";
 //     try {
 //          getInitWbPerFile(fn);
 //
 //     }
 //     catch (const std::exception &e) {
-//         std::cout << "exception caught in  read_file" << e.what() << "\n";
+//         std::cout << "exception caught in  edit_file" << e.what() << "\n";
 //         assert(false);
 //     }
 //     std::ifstream f(fn);
@@ -322,11 +362,45 @@ void read_file(const std::string &fn,std::vector<uint8>& vec, int exposure=0) {
 // }
 
 // EMSCRIPTEN_BINDINGS(hello) {
-//     function("read_file", &read_file);
+//     function("edit_file", &edit_file);
 // }
 
+void firstAnalysis(float *original_r,float *original_g,float *original_b, int width, int hight, LUTu & histogram)
+{
+    double lumimul[3];
+
+    // TMatrix wprof = ICCStore::getInstance()->workingSpaceMatrix("ProPhoto");
+    // TMatrix wprof = ICCStore::getInstance()->workingSpaceMatrix(params.icm.workingProfile);
+    const double wprof[3][3] = {{0.79767489999999996, 0.1351917, 0.031353399999999997},
+        {0.28804020000000002,0.71187409999999995,8.5699999999999996e-05 },
+        {0,0,0.82521}}; //i took it from "ProPhoto"
+    lumimul[0] = wprof[1][0];
+    lumimul[1] = wprof[1][1];
+    lumimul[2] = wprof[1][2];
+
+    int W = width;
+    int H = hight;
+    int TS =  W;
+    float lumimulf[3] = {static_cast<float>(lumimul[0]), static_cast<float>(lumimul[1]), static_cast<float>(lumimul[2])};
+
+    // calculate histogram of the y channel needed for contrast curve calculation in exposure adjustments
+    histogram.clear();
+
+    for (int i = 0; i < H; i++) {
+        for (int j = 0; j < W; j++) {
+
+            float r = original_r[i * TS + j];
+            float g = original_g[i * TS + j];
+            float b = original_b[i * TS + j];
+
+            int y = (lumimulf[0] * r + lumimulf[1] * g + lumimulf[2] * b);
+            histogram[y]++;
+        }
+    }
+}
+
 EMSCRIPTEN_BINDINGS(my_module) {
-    function("read_file", &read_file);
+    emscripten::function("edit_file", &edit_file);
     register_vector<uint8_t>("VectorUint8");
 
     // register_vector<uint8>("vector<uint8>");

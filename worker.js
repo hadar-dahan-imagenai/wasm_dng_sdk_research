@@ -4,6 +4,8 @@ import initModule from './build/dng_example.js';
 let Module;
 let imagent_canvas;
 let first_time = true;
+let last_exposure = 0;
+let last_contrast = 0;
 initModule({
   onRuntimeInitialized() {
     console.log("✅ WASM Module ready inside worker");
@@ -11,8 +13,9 @@ initModule({
 
     //trying multiple files
     self.onmessage = async function (e) {
+      console.log("got message!")
       // const files = e.data.files;
-      let { files, canvas, type, exposure  } = e.data;
+      let { files, canvas, type, exposure, contrast  } = e.data;
 
       if (imagent_canvas === undefined || !imagent_canvas)
       {
@@ -51,10 +54,16 @@ initModule({
         for (const file of files) {
           try {
             // console.log("📨 file:", file);
-            if (exposure === undefined) exposure =0;
-            const vec = new Module.VectorUint8();
 
-            Module.read_file('/work/' + file.name,vec, exposure);
+            if (exposure === undefined) exposure = last_exposure;
+            if (contrast === undefined) contrast = last_contrast;
+            last_exposure = exposure;
+            last_contrast = contrast;
+            console.log("exposure", exposure)
+            console.log("contrast", contrast)
+            const vec = new Module.VectorUint8();
+            // console.log("going to edit_file")
+            Module.edit_file('/work/' + file.name,vec, exposure, contrast);
             const result = vec;
         // Extract bytes manually
             const size = result.size();
@@ -83,9 +92,9 @@ initModule({
           }
         }
         const endTime = performance.now(); // ⏱️ stop the clock
-        // const totalTime = endTime - startTime;
+        const totalTime = endTime - startTime;
 
-        // self.postMessage({type: "log", log: `Total time: ${totalTime.toFixed(2)} ms`});
+        self.postMessage({type: "log", log: `Total time: ${totalTime.toFixed(2)} ms`});
 
       } catch (err) {
         console.error("❌ Error mounting or reading:", err);

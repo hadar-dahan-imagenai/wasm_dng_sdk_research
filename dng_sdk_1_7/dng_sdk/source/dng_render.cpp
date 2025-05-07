@@ -24,7 +24,15 @@
 #include "dng_safe_arithmetic.h"
 #include "dng_utils.h"
 
+//rt includes
+#include <dng_simple_image.h>
+#include <iostream>
+
+#include "rt_api.h"
+LUTf contrast_curve;
 /*****************************************************************************/
+
+class dng_simple_image;
 
 dng_function_zero_offset::dng_function_zero_offset (real64 zeroOffset)
 
@@ -781,6 +789,8 @@ class dng_render_task: public dng_filter_task
   
 		uint32 fNumTableTransformPlanes = 0;
 
+		uint32 fContrast = 0;
+
 		bool fSupportOverrange = false;
 		
 	public:
@@ -803,6 +813,9 @@ class dng_render_task: public dng_filter_task
 		virtual void ProcessArea (uint32 threadIndex,
 								  dng_pixel_buffer &srcBuffer,
 								  dng_pixel_buffer &dstBuffer);
+		void setContrast(uint32 contrast) {
+			fContrast = contrast;
+		}
 		
 	};
 
@@ -848,7 +861,6 @@ void dng_render_task::Start (uint32 threadCount,
 							 dng_memory_allocator *allocator,
 							 dng_abort_sniffer *sniffer)
 	{
-	
 	dng_filter_task::Start (threadCount,
 							dstArea,
 							tileSize,
@@ -1505,10 +1517,9 @@ void dng_render_task::ProcessArea (uint32 threadIndex,
 								   dng_pixel_buffer &srcBuffer,
 								   dng_pixel_buffer &dstBuffer)
 	{
-	
+	std::cout << "dng_render_task::ProcessArea threadIndex" << threadIndex << std::endl;
 	dng_rect srcArea = srcBuffer.fArea;
 	dng_rect dstArea = dstBuffer.fArea;
-	
 	uint32 srcCols = srcArea.W ();
 	
 	real32 *tPtrR = fTempBuffer [threadIndex]->Buffer_real32 ();
@@ -1727,10 +1738,9 @@ void dng_render_task::ProcessArea (uint32 threadIndex,
 		} // RGBTables
 
 	// Process each row of the image.
-	
 	for (int32 srcRow = srcArea.t; srcRow < srcArea.b; srcRow++)
 		{
-  
+
 		if (fNegative.Stage3BlackLevel ())
 			{
 			
@@ -1900,14 +1910,14 @@ void dng_render_task::ProcessArea (uint32 threadIndex,
 		// Apply exposure curve.
 
 		if (fExposureRamp.Get ())
-			{
+		{
 
 			DoBaseline1DFunction (tPtrR,
 								  tPtrR,
 								  srcCols,
 								  *fExposureRamp,
 								  fSupportOverrange);
-								
+
 			DoBaseline1DFunction (tPtrG,
 								  tPtrG,
 								  srcCols,
@@ -1920,10 +1930,37 @@ void dng_render_task::ProcessArea (uint32 threadIndex,
 								  *fExposureRamp,
 								  fSupportOverrange);
 
+		}
+
+		for (int ii = 0; ii < srcCols; ii++) {
+
+			if (fContrast) {
+				// Apply contrast using tone curve - from rgbProc
+				real32 scale = 65535.0f;
+
+				auto applyContrastCurve = [&](real32 value) -> real32 {
+					auto index = (value < 1.0f) ? (value * scale) :(scale);
+					real32 result = contrast_curve[index];
+					return (result > scale) ? 1.0f : result / scale;
+				};
+
+				real32 curve_val_red   = applyContrastCurve(tPtrR[ii]);
+				real32 curve_val_green = applyContrastCurve(tPtrG[ii]);
+				real32 curve_val_blue  = applyContrastCurve(tPtrB[ii]);
+
+				rtengine::setUnlessOOG(
+					tPtrR[ii],
+					tPtrG[ii],
+					tPtrB[ii],
+					curve_val_red,
+					curve_val_green,
+					curve_val_blue
+				);
 			}
-		
+
+		}
 		// Apply look table, if any.
-		
+
 		if (fLookTable.Get ())
 			{
 			
@@ -2123,7 +2160,7 @@ dng_render::dng_render (dng_host &host,
 
 /*****************************************************************************/
 
-dng_image * dng_render::Render ()
+dng_image * dng_render::Render (int contrast)
 	{
 	
 	// Switch to NOP default parameters for non-scene referred data.
@@ -2168,7 +2205,6 @@ dng_image * dng_render::Render ()
 		}
 	
 	const dng_image *srcImage = fNegative.Stage3Image ();
- 
 	const dng_image *srcMask = fNegative.TransparencyMask ();
 	
 	dng_rect srcBounds = fNegative.DefaultCropArea ();
@@ -2249,14 +2285,26 @@ dng_image * dng_render::Render ()
 	AutoPtr<dng_image> dstImage (fHost.Make_dng_image (srcBounds.Size (),
 													   dstPlanes,
 													   FinalPixelType ()));
-													 
+	std::cout <<" srcBounds.H()" << srcBounds.H() << std::endl;
+	std::cout <<" srcBounds.W()" << srcBounds.W() << std::endl;
 	dng_render_task task (*srcImage,
 						  srcMask,
 						  *dstImage.Get (),
 						  fNegative,
 						  *this,
 						  srcBounds.TL ());
-						  
+	task.setContrast(contrast);
+	//todo here
+	if (contrast != 0) {
+		dng_pixel_buffer pixel_buf;
+		dng_simple_image& simple_image = dynamic_cast<dng_simple_image&>(const_cast<dng_image&>(*srcImage));
+		simple_image.GetPixelBuffer(pixel_buf);
+
+		auto width = srcBounds.W();
+		auto height = srcBounds.H();
+		mini_rt::do_contrast(pixel_buf, height, width, contrast, contrast_curve);
+	}
+
 	fHost.PerformAreaTask (task,
 						   dstImage->Bounds ());
 						  

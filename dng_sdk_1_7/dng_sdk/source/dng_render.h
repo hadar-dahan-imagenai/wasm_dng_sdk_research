@@ -331,7 +331,7 @@ class dng_render: private dng_uncopyable
 		/// Input digital negative is passed to the constructor of this dng_render class.
 		/// \retval The final resulting image.
 
-		virtual dng_image * Render ();
+		virtual dng_image * Render (int contrast=0);
 									
 	};
 

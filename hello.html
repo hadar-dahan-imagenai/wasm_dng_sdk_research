@@ -94,10 +94,18 @@
   <span id="exposure-value">0</span>
 </div>
 
+<!-- Contrast slider -->
+<div>
+  <label for="contrast-slider">Contrast:</label>
+  <input type="range" id="contrast-slider" min="-100" max="100" step="0.1" value="0">
+  <span id="contrast-value">0</span>
+</div>
+
 <input type="button" onClick="onClick()" value="ok" />
 <div id="worker-logs" style="font-family: monospace; padding: 10px; border: 1px solid black; background: #f9f9f9; color: #333; min-height: 50px;"></div>
 
 <canvas id="myCanvas" width="800" height="600"></canvas>
+<script src="https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js"></script>
 
 <script type="module">
   import init from './build/dng_example.js';
@@ -125,28 +133,68 @@
   //     type: 'image_processing' // Indicates that image processing is triggered again
   //   });
   // });
-  let sliderTimeout;
+
+  // let sliderTimeout;
+  //
+  // document.getElementById('exposure-slider').addEventListener('input', function () {
+  //   // Clear the previous timeout if the slider is being moved again
+  //   clearTimeout(sliderTimeout);
+  //
+  //   const exposureValue = parseFloat(this.value); // Get the slider value as a number
+  //   document.getElementById('exposure-value').textContent = exposureValue; // Update the displayed exposure value
+  //
+  //   // Set a new timeout to trigger after 0.05 seconds if the slider value hasn't changed
+  //   sliderTimeout = setTimeout(function () {
+  //     const fileList = document.getElementById("in-file").files;
+  //     const files = [fileList[0]]; // Assuming only one file is uploaded
+  //
+  //     // Send updated exposure to the worker for re-rendering
+  //     worker.postMessage({
+  //       files,
+  //       exposure: exposureValue, // Send exposure value here
+  //       type: 'image_processing' // Indicates that image processing is triggered again
+  //     });
+  //   }, 50); // Wait for 50ms (0.05 seconds) after the last input
+  // });
+
+  // import throttle from 'lodash/throttle';
+
+  // Throttled function that sends data to the worker
+    const throttledSendToWorker = _.throttle(function (exposureValue) {
+    const fileList = document.getElementById("in-file").files;
+    const files = [fileList[0]];
+
+    worker.postMessage({
+    files,
+    exposure: exposureValue,
+    type: 'image_processing'
+  });
+  }, 50);
+
+  // Throttled function that sends data to the worker
+    const throttledSendToWorkerContrast = _.throttle(function (contrastValue) {
+    const fileList = document.getElementById("in-file").files;
+    const files = [fileList[0]];
+
+    worker.postMessage({
+    files,
+      contrast: contrastValue,
+    type: 'image_processing'
+  });
+  }, 50);
 
   document.getElementById('exposure-slider').addEventListener('input', function () {
-    // Clear the previous timeout if the slider is being moved again
-    clearTimeout(sliderTimeout);
-
-    const exposureValue = parseFloat(this.value); // Get the slider value as a number
-    document.getElementById('exposure-value').textContent = exposureValue; // Update the displayed exposure value
-
-    // Set a new timeout to trigger after 0.5 seconds if the slider value hasn't changed
-    sliderTimeout = setTimeout(function () {
-      const fileList = document.getElementById("in-file").files;
-      const files = [fileList[0]]; // Assuming only one file is uploaded
-
-      // Send updated exposure to the worker for re-rendering
-      worker.postMessage({
-        files,
-        exposure: exposureValue, // Send exposure value here
-        type: 'image_processing' // Indicates that image processing is triggered again
-      });
-    }, 50); // Wait for 500ms (0.5 seconds) after the last input
+    const exposureValue = parseFloat(this.value);
+    document.getElementById('exposure-value').textContent = exposureValue;
+    throttledSendToWorker(exposureValue);
   });
+
+  document.getElementById('contrast-slider').addEventListener('input', function () {
+    const contrastValue = parseFloat(this.value);
+    document.getElementById('contrast-value').textContent = contrastValue;
+    throttledSendToWorkerContrast(contrastValue);
+  });
+
 
 </script>
 
