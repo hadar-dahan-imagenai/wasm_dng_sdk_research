@@ -2,7 +2,7 @@
 cmake_minimum_required(VERSION 3.13)
 
 set(CMAKE_CXX_STANDARD 14)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fdeclspec --bind -s WASM=1 -lworkerfs.js -flto -O3 -lembind")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fdeclspec --bind -s WASM=1 -lworkerfs.js -flto -O3 -lembind -s USE_PTHREADS=1 -pthread")
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} \
 -s USE_LIBPNG=1 \
 -s FORCE_FILESYSTEM=1 \
@@ -26,9 +26,14 @@ if(MINGW)
     add_definitions(-D__NO_ANSI_CPP)
 endif()
 
+add_subdirectory(libdng) #dor dng host
+add_subdirectory(rt_curves_lib) #dor dng host
 # -------------------------------
 # Third-party libraries
 # -------------------------------
+
+
+
 #libjpeg
 include_directories(${CMAKE_SOURCE_DIR}/dng_sdk_1_7/libjpeg)
 file(GLOB JPEG_SOURCES
@@ -165,6 +170,7 @@ add_library(dng_sdk STATIC ${DNG_SOURCES})
 target_include_directories(dng_sdk PUBLIC
         ${CMAKE_SOURCE_DIR}/dng_sdk_1_7/dng_sdk/source
         ${CMAKE_SOURCE_DIR}/dng_sdk_1_7/xmp/toolkit/third-party/zlib
+        ${CMAKE_SOURCE_DIR}/rt_curves_lib/include
         ${JPEGXL_INCLUDE_DIR}
         ${Boost_INCLUDE_DIRS}
 )
@@ -210,11 +216,17 @@ target_link_libraries(dng_sdk PUBLIC
         jxl
         jxl_threads
         jxl_cms
+        rt_curves_lib
 )
 
 # -------------------------------------
 # Main executable
 # -------------------------------------
 add_executable(dng_example main.cpp)
-target_link_libraries(dng_example dng_sdk)
+target_compile_options(dng_example PRIVATE -s USE_PTHREADS=1 -pthread )
+target_link_libraries(dng_example dng_sdk dng_host)
+target_include_directories(dng_example PUBLIC
+        ${CMAKE_SOURCE_DIR}/rt_curves_lib/include
+)
+
 message(STATUS "This is a message from CMakeLists.txt for mini lightroom poc project")
