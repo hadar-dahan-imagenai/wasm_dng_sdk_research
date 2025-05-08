@@ -2,7 +2,9 @@
 cmake_minimum_required(VERSION 3.13)
 
 set(CMAKE_CXX_STANDARD 14)
+
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fdeclspec --bind -s WASM=1 -lworkerfs.js -flto -O3 -lembind -s USE_PTHREADS=1 -pthread")
+
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} \
 -s USE_LIBPNG=1 \
 -s FORCE_FILESYSTEM=1 \
@@ -13,7 +15,16 @@ set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} \
 -s EXPORTED_RUNTIME_METHODS=['FS','WORKERFS'] \
 -s DISABLE_EXCEPTION_CATCHING=0 \
 -s ALLOW_MEMORY_GROWTH=1 \
--s ENVIRONMENT=worker --bind -s WASM=1 -lworkerfs.js -flto -lembind")
+-s ENVIRONMENT=worker \
+--bind \
+-s WASM=1 \
+-lworkerfs.js \
+-flto \
+-lembind \
+-pthread \
+-s USE_PTHREADS=1 \
+-s PTHREAD_POOL_SIZE=20 \
+-s PTHREAD_POOL_SIZE_STRICT=2")
 
 project(dng_sdk_wasm)
 
@@ -201,6 +212,7 @@ target_compile_definitions(dng_sdk PUBLIC
         XML_STATIC=1
         qDNGUseStdInt=1
         WEB_ENV=1
+        qDNG64Bit=1
 )
 
 target_link_directories(dng_sdk PUBLIC ${JPEGXL_LIB_DIR})

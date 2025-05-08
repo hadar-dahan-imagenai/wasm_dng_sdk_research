@@ -2,6 +2,16 @@
 
 This project is a minimal implementation of a Lightroom-style image editor, compiled to WebAssembly using Emscripten.
 
+## Build
+
+- clone the repo 
+- cd wasm_dng_sdk
+- mkdir build
+- cd build
+-  `cmake .. -DCMAKE_BUILD_TYPE=Release` (or a different build type)
+- run `emmake make`
+
+
 ## Prerequisites
 
 - [Emscripten](https://emscripten.org/docs/getting_started/downloads.html) installed and configured
