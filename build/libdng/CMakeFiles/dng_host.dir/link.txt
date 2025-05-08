@@ -1,0 +1,2 @@
+C:\Users\hadard\Desktop\dev\wasm_dng_sdk\emsdk\upstream\emscripten\emar.bat qc libdng_host.a CMakeFiles/dng_host.dir/dnghost.cpp.o
+C:\Users\hadard\Desktop\dev\wasm_dng_sdk\emsdk\upstream\emscripten\emranlib.bat libdng_host.a

@@ -1,0 +1,31 @@
+CMakeFiles/dng_jpeg.dir/dng_sdk_1_7/libjpeg/jfdctflt.c.o: \
+  C:\Users\hadard\Desktop\dev\wasm_dng_sdk\dng_sdk_1_7\libjpeg\jfdctflt.c \
+  C:\Users\hadard\Desktop\dev\wasm_dng_sdk\dng_sdk_1_7\libjpeg\jinclude.h \
+  C:\Users\hadard\Desktop\dev\wasm_dng_sdk\dng_sdk_1_7\libjpeg\jconfig.h \
+  C:\Users\hadard\Desktop\dev\wasm_dng_sdk\emsdk\upstream\lib\clang\21\include\stddef.h \
+  C:\Users\hadard\Desktop\dev\wasm_dng_sdk\emsdk\upstream\emscripten\cache\sysroot\include\stddef.h \
+  C:\Users\hadard\Desktop\dev\wasm_dng_sdk\emsdk\upstream\lib\clang\21\include\__stddef_header_macro.h \
+  C:\Users\hadard\Desktop\dev\wasm_dng_sdk\emsdk\upstream\lib\clang\21\include\__stddef_ptrdiff_t.h \
+  C:\Users\hadard\Desktop\dev\wasm_dng_sdk\emsdk\upstream\lib\clang\21\include\__stddef_size_t.h \
+  C:\Users\hadard\Desktop\dev\wasm_dng_sdk\emsdk\upstream\lib\clang\21\include\__stddef_wchar_t.h \
+  C:\Users\hadard\Desktop\dev\wasm_dng_sdk\emsdk\upstream\lib\clang\21\include\__stddef_null.h \
+  C:\Users\hadard\Desktop\dev\wasm_dng_sdk\emsdk\upstream\lib\clang\21\include\__stddef_max_align_t.h \
+  C:\Users\hadard\Desktop\dev\wasm_dng_sdk\emsdk\upstream\lib\clang\21\include\__stddef_offsetof.h \
+  C:\Users\hadard\Desktop\dev\wasm_dng_sdk\emsdk\upstream\emscripten\cache\sysroot\include\compat\stdlib.h \
+  C:\Users\hadard\Desktop\dev\wasm_dng_sdk\emsdk\upstream\emscripten\cache\sysroot\include\stdlib.h \
+  C:\Users\hadard\Desktop\dev\wasm_dng_sdk\emsdk\upstream\emscripten\cache\sysroot\include\features.h \
+  C:\Users\hadard\Desktop\dev\wasm_dng_sdk\emsdk\upstream\emscripten\cache\sysroot\include\bits\alltypes.h \
+  C:\Users\hadard\Desktop\dev\wasm_dng_sdk\emsdk\upstream\emscripten\cache\sysroot\include\alloca.h \
+  C:\Users\hadard\Desktop\dev\wasm_dng_sdk\emsdk\upstream\emscripten\cache\sysroot\include\stdio.h \
+  C:\Users\hadard\Desktop\dev\wasm_dng_sdk\emsdk\upstream\emscripten\cache\sysroot\include\wasi\api.h \
+  C:\Users\hadard\Desktop\dev\wasm_dng_sdk\emsdk\upstream\lib\clang\21\include\stdint.h \
+  C:\Users\hadard\Desktop\dev\wasm_dng_sdk\emsdk\upstream\emscripten\cache\sysroot\include\stdint.h \
+  C:\Users\hadard\Desktop\dev\wasm_dng_sdk\emsdk\upstream\emscripten\cache\sysroot\include\bits\stdint.h \
+  C:\Users\hadard\Desktop\dev\wasm_dng_sdk\emsdk\upstream\emscripten\cache\sysroot\include\compat\string.h \
+  C:\Users\hadard\Desktop\dev\wasm_dng_sdk\emsdk\upstream\emscripten\cache\sysroot\include\string.h \
+  C:\Users\hadard\Desktop\dev\wasm_dng_sdk\emsdk\upstream\emscripten\cache\sysroot\include\strings.h \
+  C:\Users\hadard\Desktop\dev\wasm_dng_sdk\dng_sdk_1_7\libjpeg\jpeglib.h \
+  C:\Users\hadard\Desktop\dev\wasm_dng_sdk\dng_sdk_1_7\libjpeg\jmorecfg.h \
+  C:\Users\hadard\Desktop\dev\wasm_dng_sdk\dng_sdk_1_7\libjpeg\jpegint.h \
+  C:\Users\hadard\Desktop\dev\wasm_dng_sdk\dng_sdk_1_7\libjpeg\jerror.h \
+  C:\Users\hadard\Desktop\dev\wasm_dng_sdk\dng_sdk_1_7\libjpeg\jdct.h

@@ -1,0 +1,31 @@
+# Mini Lightroom App (C++/WebAssembly)
+
+This project is a minimal implementation of a Lightroom-style image editor, compiled to WebAssembly using Emscripten.
+
+## Prerequisites
+
+- [Emscripten](https://emscripten.org/docs/getting_started/downloads.html) installed and configured
+- A modern web browser
+
+## Running the App
+
+1. Start the local server using `emrun`:
+   ```bash
+   emrun --no_browser --port <PORT> hello.html
+Replace <PORT> with the port number you want to use.
+
+Note: emrun is part of the Emscripten SDK. Ensure it is available in your environment.
+
+
+2. Open a web browser and navigate to::
+   ```bash
+   http://localhost:<PORT>/hello.html
+
+
+## Test Helpers
+The `test_helpers/` directory includes:
+
+A sample image from an EOS R6 camera
+
+A matching .dcp (DNG Camera Profile) file for testing color profiles
+

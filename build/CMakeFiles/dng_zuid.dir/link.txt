@@ -1,0 +1,2 @@
+C:\Users\hadard\Desktop\dev\wasm_dng_sdk\emsdk\upstream\emscripten\emar.bat qc libdng_zuid.a "CMakeFiles/dng_zuid.dir/dng_sdk_1_7/xmp/toolkit/third-party/zuid/sources/MD5.cpp.o" "CMakeFiles/dng_zuid.dir/dng_sdk_1_7/xmp/toolkit/third-party/zuid/sources/ZUIDSysDep.cpp.o" "CMakeFiles/dng_zuid.dir/dng_sdk_1_7/xmp/toolkit/third-party/zuid/sources/ZUIDUUID.cpp.o"
+C:\Users\hadard\Desktop\dev\wasm_dng_sdk\emsdk\upstream\emscripten\emranlib.bat libdng_zuid.a

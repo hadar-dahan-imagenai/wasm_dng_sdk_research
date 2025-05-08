@@ -59,29 +59,26 @@ initModule({
             if (contrast === undefined) contrast = last_contrast;
             last_exposure = exposure;
             last_contrast = contrast;
-            console.log("exposure", exposure)
-            console.log("contrast", contrast)
             const vec = new Module.VectorUint8();
             // console.log("going to edit_file")
             Module.edit_file('/work/' + file.name,vec, exposure, contrast);
             const result = vec;
         // Extract bytes manually
             const size = result.size();
-            const rawArray = [];
-
+            const byteArray = new Uint8Array(size);
             for (let i = 0; i < size; i++) {
-              rawArray.push(result.get(i));
+              byteArray[i] = (result.get(i));
             }
 
-            const byteArray = new Uint8Array(rawArray);
 
             const blob = new Blob([byteArray], { type: 'image/jpeg' });
             const imageBitmap = await createImageBitmap(blob);
 
             const ctx = imagent_canvas.getContext('2d');
-            ctx.clearRect(0, 0, imageBitmap.width, imageBitmap.height);
             imagent_canvas.width = imageBitmap.width;
             imagent_canvas.height = imageBitmap.height;
+            // ctx.clearRect(0, 0, imageBitmap.width, imageBitmap.height);
+
             ctx.drawImage(imageBitmap, 0, 0);
 
             first_time = false

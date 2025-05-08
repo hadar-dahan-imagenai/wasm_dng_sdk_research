@@ -1,0 +1,30 @@
+CMakeFiles/expat.dir/dng_sdk_1_7/xmp/toolkit/XMPCore/third-party/expat/public/lib/xmltok.c.o: \
+  C:\Users\hadard\Desktop\dev\wasm_dng_sdk\dng_sdk_1_7\xmp\toolkit\XMPCore\third-party\expat\public\lib\xmltok.c \
+  C:\Users\hadard\Desktop\dev\wasm_dng_sdk\emsdk\upstream\lib\clang\21\include\stddef.h \
+  C:\Users\hadard\Desktop\dev\wasm_dng_sdk\emsdk\upstream\emscripten\cache\sysroot\include\stddef.h \
+  C:\Users\hadard\Desktop\dev\wasm_dng_sdk\emsdk\upstream\lib\clang\21\include\__stddef_header_macro.h \
+  C:\Users\hadard\Desktop\dev\wasm_dng_sdk\emsdk\upstream\lib\clang\21\include\__stddef_ptrdiff_t.h \
+  C:\Users\hadard\Desktop\dev\wasm_dng_sdk\emsdk\upstream\lib\clang\21\include\__stddef_size_t.h \
+  C:\Users\hadard\Desktop\dev\wasm_dng_sdk\emsdk\upstream\lib\clang\21\include\__stddef_wchar_t.h \
+  C:\Users\hadard\Desktop\dev\wasm_dng_sdk\emsdk\upstream\lib\clang\21\include\__stddef_null.h \
+  C:\Users\hadard\Desktop\dev\wasm_dng_sdk\emsdk\upstream\lib\clang\21\include\__stddef_max_align_t.h \
+  C:\Users\hadard\Desktop\dev\wasm_dng_sdk\emsdk\upstream\lib\clang\21\include\__stddef_offsetof.h \
+  C:\Users\hadard\Desktop\dev\wasm_dng_sdk\emsdk\upstream\emscripten\cache\sysroot\include\compat\string.h \
+  C:\Users\hadard\Desktop\dev\wasm_dng_sdk\emsdk\upstream\emscripten\cache\sysroot\include\string.h \
+  C:\Users\hadard\Desktop\dev\wasm_dng_sdk\emsdk\upstream\emscripten\cache\sysroot\include\features.h \
+  C:\Users\hadard\Desktop\dev\wasm_dng_sdk\emsdk\upstream\emscripten\cache\sysroot\include\bits\alltypes.h \
+  C:\Users\hadard\Desktop\dev\wasm_dng_sdk\emsdk\upstream\emscripten\cache\sysroot\include\strings.h \
+  C:\Users\hadard\Desktop\dev\wasm_dng_sdk\emsdk\upstream\lib\clang\21\include\stdbool.h \
+  C:\Users\hadard\Desktop\dev\wasm_dng_sdk\emsdk\upstream\emscripten\cache\sysroot\include\stdbool.h \
+  C:\Users\hadard\Desktop\dev\wasm_dng_sdk\dng_sdk_1_7\xmp\toolkit\XMPCore\third-party\expat\public\lib\expat_external.h \
+  C:\Users\hadard\Desktop\dev\wasm_dng_sdk\dng_sdk_1_7\xmp\toolkit\XMPCore\third-party\expat\public\lib\internal.h \
+  C:\Users\hadard\Desktop\dev\wasm_dng_sdk\dng_sdk_1_7\xmp\toolkit\XMPCore\third-party\expat\public\lib\xmltok.h \
+  C:\Users\hadard\Desktop\dev\wasm_dng_sdk\dng_sdk_1_7\xmp\toolkit\XMPCore\third-party\expat\public\lib\nametab.h \
+  C:\Users\hadard\Desktop\dev\wasm_dng_sdk\dng_sdk_1_7\xmp\toolkit\XMPCore\third-party\expat\public\lib\xmltok_impl.h \
+  C:\Users\hadard\Desktop\dev\wasm_dng_sdk\dng_sdk_1_7\xmp\toolkit\XMPCore\third-party\expat\public\lib\ascii.h \
+  C:\Users\hadard\Desktop\dev\wasm_dng_sdk\dng_sdk_1_7\xmp\toolkit\XMPCore\third-party\expat\public\lib\xmltok_impl.c \
+  C:\Users\hadard\Desktop\dev\wasm_dng_sdk\dng_sdk_1_7\xmp\toolkit\XMPCore\third-party\expat\public\lib\asciitab.h \
+  C:\Users\hadard\Desktop\dev\wasm_dng_sdk\dng_sdk_1_7\xmp\toolkit\XMPCore\third-party\expat\public\lib\utf8tab.h \
+  C:\Users\hadard\Desktop\dev\wasm_dng_sdk\dng_sdk_1_7\xmp\toolkit\XMPCore\third-party\expat\public\lib\iasciitab.h \
+  C:\Users\hadard\Desktop\dev\wasm_dng_sdk\dng_sdk_1_7\xmp\toolkit\XMPCore\third-party\expat\public\lib\latin1tab.h \
+  C:\Users\hadard\Desktop\dev\wasm_dng_sdk\dng_sdk_1_7\xmp\toolkit\XMPCore\third-party\expat\public\lib\xmltok_ns.c

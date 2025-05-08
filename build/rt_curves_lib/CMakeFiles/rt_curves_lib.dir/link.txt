@@ -1,0 +1,2 @@
+C:\Users\hadard\Desktop\dev\wasm_dng_sdk\emsdk\upstream\emscripten\emar.bat qc librt_curves_lib.a CMakeFiles/rt_curves_lib.dir/src/curves.cpp.o CMakeFiles/rt_curves_lib.dir/src/color.cc.o CMakeFiles/rt_curves_lib.dir/src/diagonalcurves.cc.o CMakeFiles/rt_curves_lib.dir/src/rt_api.cpp.o
+C:\Users\hadard\Desktop\dev\wasm_dng_sdk\emsdk\upstream\emscripten\emranlib.bat librt_curves_lib.a

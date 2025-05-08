@@ -1,0 +1,15 @@
+C:/Users/hadard/Desktop/dev/wasm_dng_sdk/build/CMakeFiles/dng_jpeg.dir
+C:/Users/hadard/Desktop/dev/wasm_dng_sdk/build/CMakeFiles/expat.dir
+C:/Users/hadard/Desktop/dev/wasm_dng_sdk/build/CMakeFiles/xmp_core.dir
+C:/Users/hadard/Desktop/dev/wasm_dng_sdk/build/CMakeFiles/xmp_files.dir
+C:/Users/hadard/Desktop/dev/wasm_dng_sdk/build/CMakeFiles/dng_sdk.dir
+C:/Users/hadard/Desktop/dev/wasm_dng_sdk/build/CMakeFiles/dng_example.dir
+C:/Users/hadard/Desktop/dev/wasm_dng_sdk/build/CMakeFiles/edit_cache.dir
+C:/Users/hadard/Desktop/dev/wasm_dng_sdk/build/CMakeFiles/rebuild_cache.dir
+C:/Users/hadard/Desktop/dev/wasm_dng_sdk/build/libdng/CMakeFiles/dng_host.dir
+C:/Users/hadard/Desktop/dev/wasm_dng_sdk/build/libdng/CMakeFiles/edit_cache.dir
+C:/Users/hadard/Desktop/dev/wasm_dng_sdk/build/libdng/CMakeFiles/rebuild_cache.dir
+C:/Users/hadard/Desktop/dev/wasm_dng_sdk/build/rt_curves_lib/CMakeFiles/lcms2.dir
+C:/Users/hadard/Desktop/dev/wasm_dng_sdk/build/rt_curves_lib/CMakeFiles/rt_curves_lib.dir
+C:/Users/hadard/Desktop/dev/wasm_dng_sdk/build/rt_curves_lib/CMakeFiles/edit_cache.dir
+C:/Users/hadard/Desktop/dev/wasm_dng_sdk/build/rt_curves_lib/CMakeFiles/rebuild_cache.dir
