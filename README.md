@@ -12,9 +12,10 @@ This project is a minimal implementation of a Lightroom-style image editor, comp
 1. Start the local server using `emrun`:
    ```bash
    emrun --no_browser --port <PORT> hello.html
-Replace <PORT> with the port number you want to use.
+
 
 Note: emrun is part of the Emscripten SDK. Ensure it is available in your environment.
+(`emrun` is in path `wasm_dng_sdk\emsdk\upstream\emscripten\emrun` )
 
 
 2. Open a web browser and navigate to::
