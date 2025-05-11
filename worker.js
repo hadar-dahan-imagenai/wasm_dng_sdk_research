@@ -53,32 +53,27 @@ initModule({
         const results = [];
         for (const file of files) {
           try {
-            // console.log("📨 file:", file);
-
             if (exposure === undefined) exposure = last_exposure;
             if (contrast === undefined) contrast = last_contrast;
             last_exposure = exposure;
             last_contrast = contrast;
             const vec = new Module.VectorUint8();
-            // console.log("going to edit_file")
-            Module.edit_file('/work/' + file.name,vec, exposure, contrast);
+            Module.edit_file('/work/' + file.name, vec, exposure, contrast);
             const result = vec;
-        // Extract bytes manually
+
+            // Extract bytes manually
             const size = result.size();
-            const byteArray = new Uint8Array(size);
-            for (let i = 0; i < size; i++) {
-              byteArray[i] = (result.get(i));
-            }
 
+            const dataPtr = Module.vector_get_data(result); // Get the raw data pointer
+            const byteArray = new Uint8Array(Module.HEAP8.buffer, dataPtr, size);
 
-            const blob = new Blob([byteArray], { type: 'image/jpeg' });
-            const imageBitmap = await createImageBitmap(blob);
+            const response = new Response(byteArray, { headers: { 'Content-Type': 'image/jpeg' } });
+            const b = await response.blob()
+            const imageBitmap = await createImageBitmap(b);
 
             const ctx = imagent_canvas.getContext('2d');
             imagent_canvas.width = imageBitmap.width;
             imagent_canvas.height = imageBitmap.height;
-            // ctx.clearRect(0, 0, imageBitmap.width, imageBitmap.height);
-
             ctx.drawImage(imageBitmap, 0, 0);
 
             first_time = false

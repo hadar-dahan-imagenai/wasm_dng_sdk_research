@@ -135,7 +135,7 @@ dng_point dng_area_task::FindTileSize (const dng_rect &area) const
 		
 	tileSize.v = Min_int32 (repeatV, maxTileSize.v);
 	tileSize.h = Min_int32 (repeatH, maxTileSize.h);
-	
+
 	// Make Xcode happy (div by zero).
 
 	tileSize.v = Max_int32 (tileSize.v, 1);
@@ -191,7 +191,8 @@ dng_point dng_area_task::FindTileSize (const dng_rect &area) const
 				 (int32) tileSize.h,
 				 (int32) tileSize.v);
 		}	
-
+	// tileSize.h = area.r;//todo hadar
+	// tileSize.v = area.b;//todo hadar
 	return tileSize;
 	
 	}

@@ -31,6 +31,7 @@
 //rt includes
 #include <curves.h>
 #include <color.h>
+#include <dng_simple_image.h>
 
 using namespace emscripten;
 template <typename T>
@@ -66,6 +67,7 @@ static int extractInitialTemperatureAndTint(DngHost& host, std::unique_ptr<dng_n
 
     return 1;
 }
+#include <chrono>
 
 void writeTiffTemplate(const std::string& outFilename, std::unordered_map<std::string, real64>& editingParamsMap, DngHost& host, std::unique_ptr<dng_negative>&neg, std::vector<uint8>& vec) {
     // std::cout << "writeTiffTemplate strat " << std::endl;
@@ -99,10 +101,21 @@ void writeTiffTemplate(const std::string& outFilename, std::unordered_map<std::s
             contrast = (editingParamsMap.at("contrast"));
         }
 
-        AutoPtr<dng_image> negImage(negRender.Render(contrast));
-        std::cout << "after Render" << std::endl;
-        dng_memory_stream stream (host.Allocator ());
+        auto start = std::chrono::high_resolution_clock::now();
 
+        negRender.SetFinalPixelType(ttByte);
+        AutoPtr<dng_image> negImage(negRender.Render(contrast));
+        auto end = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double, std::milli> elapsed = end - start;
+
+        std::cout << "Render time: " << elapsed.count() << " ms" << std::endl;
+        std::cout << "after Render" << std::endl;
+
+        dng_pixel_buffer pixel_buf;
+        dng_simple_image& simple_image = dynamic_cast<dng_simple_image&>(const_cast<dng_image&>(*negImage));
+        simple_image.GetPixelBuffer(pixel_buf);
+
+        // dng_memory_stream stream (host.Allocator ());
         AutoPtr<dng_jpeg_preview> jpeg(new dng_jpeg_preview());
         dng_string appNameVersion("mini-lr-poc"); appNameVersion.Append(" "); appNameVersion.Append("mini-lr-0.1");
         // dng_string appNameVersion(m_appName); appNameVersion.Append(" "); appNameVersion.Append(m_appVersion.Get());
@@ -113,15 +126,19 @@ void writeTiffTemplate(const std::string& outFilename, std::unordered_map<std::s
         jpeg->fInfo.fApplicationVersion.Set_ASCII(appNameVersion.Get());
         jpeg->fInfo.fDateTime = m_dateTimeNow.Encode_ISO_8601();
         jpeg->fInfo.fColorSpace = previewColorSpace_sRGB;
+        start = std::chrono::high_resolution_clock::now();
 
         dng_image_writer jpegWriter; jpegWriter.EncodeJPEGPreview(host, *negImage.Get(), *jpeg.Get(), 8);
+         end = std::chrono::high_resolution_clock::now();
+        elapsed = end - start;
 
+        std::cout << "jpegWriter time: " << elapsed.count() << " ms" << std::endl;
         auto& block = jpeg->CompressedData();
         auto buf = jpeg->CompressedData().Buffer_uint8();
         size_t size = block.LogicalSize();
 
         std::vector<uint8> new_vec(buf, buf + size);
-        vec = new_vec;
+        vec = std::move(new_vec);
     }
     catch (dng_exception& e) {
        std::cout << "Error while writing TIFF-file! " << e.ErrorCode() << std::endl;
@@ -301,7 +318,13 @@ void edit_file(const std::string &fn,std::vector<uint8>& vec, int exposure=0, in
     editingParamsMap["exposure"] = exposure;
     editingParamsMap["contrast"] = contrast;
     try {
+        auto start = std::chrono::high_resolution_clock::now();
+
         generateEditing(fn, "/work/output.jpg", hardcoded_dcp_path, vec, editingParamsMap);
+        auto end = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double, std::milli> elapsed = end - start;
+
+        std::cout << "after generateEditing- time: " << elapsed.count() << " ms" << std::endl;
         std::cout << "edit_file DONE" << fn << "\n";
 
     }
@@ -399,9 +422,17 @@ void firstAnalysis(float *original_r,float *original_g,float *original_b, int wi
     }
 }
 
+// Function to return the raw data pointer from the vector
+uintptr_t vector_get_data(std::vector<uint8_t>& vec) {
+    return reinterpret_cast<uintptr_t>(vec.data());
+}
+
 EMSCRIPTEN_BINDINGS(my_module) {
     emscripten::function("edit_file", &edit_file);
+
+    // Register the vector type
     register_vector<uint8_t>("VectorUint8");
 
-    // register_vector<uint8>("vector<uint8>");
+    // Bind the data() function but cast the result to uintptr_t (usable in JS)
+    emscripten::function("vector_get_data", &vector_get_data);
 }

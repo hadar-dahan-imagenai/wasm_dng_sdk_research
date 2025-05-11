@@ -30,6 +30,7 @@
 
 #include "rt_api.h"
 LUTf contrast_curve;
+auto last_contrast = 0;
 /*****************************************************************************/
 
 class dng_simple_image;
@@ -1517,7 +1518,7 @@ void dng_render_task::ProcessArea (uint32 threadIndex,
 								   dng_pixel_buffer &srcBuffer,
 								   dng_pixel_buffer &dstBuffer)
 	{
-	std::cout << "dng_render_task::ProcessArea threadIndex" << threadIndex << std::endl;
+	// std::cout << "dng_render_task::ProcessArea threadIndex" << threadIndex << std::endl;
 	dng_rect srcArea = srcBuffer.fArea;
 	dng_rect dstArea = dstBuffer.fArea;
 	uint32 srcCols = srcArea.W ();
@@ -2159,6 +2160,7 @@ dng_render::dng_render (dng_host &host,
 	}
 
 /*****************************************************************************/
+#include <chrono>
 
 dng_image * dng_render::Render (int contrast)
 	{
@@ -2295,7 +2297,12 @@ dng_image * dng_render::Render (int contrast)
 						  srcBounds.TL ());
 	task.setContrast(contrast);
 	//todo here
-	if (contrast != 0) {
+	if (contrast == last_contrast) {
+		//do nothing, lut is ready
+	}
+	else if (contrast != 0) {
+		auto start = std::chrono::high_resolution_clock::now();
+
 		dng_pixel_buffer pixel_buf;
 		dng_simple_image& simple_image = dynamic_cast<dng_simple_image&>(const_cast<dng_image&>(*srcImage));
 		simple_image.GetPixelBuffer(pixel_buf);
@@ -2303,11 +2310,20 @@ dng_image * dng_render::Render (int contrast)
 		auto width = srcBounds.W();
 		auto height = srcBounds.H();
 		mini_rt::do_contrast(pixel_buf, height, width, contrast, contrast_curve);
+		auto end = std::chrono::high_resolution_clock::now();
+		std::chrono::duration<double, std::milli> elapsed = end - start;
+
+		std::cout << "build contrast_curve time: " << elapsed.count() << " ms" << std::endl;
 	}
+	last_contrast = contrast;
+	auto start = std::chrono::high_resolution_clock::now();
 
 	fHost.PerformAreaTask (task,
 						   dstImage->Bounds ());
-						  
+	auto end = std::chrono::high_resolution_clock::now();
+	std::chrono::duration<double, std::milli> elapsed = end - start;
+
+	std::cout << "actual processing time: " << elapsed.count() << " ms" << std::endl;
 	return dstImage.Release ();
 	
 	}

@@ -1,5 +1,77 @@
 #include "../include/rt_api.h"
+#ifdef _OPENMP
+#include <omp.h>
+#endif
+void firstAnalysis2(dng_pixel_buffer& pixel_buf, int width, int hight, LUTu & histogram)
+{
+    double lumimul[3];
+    const double wprof[3][3] = {{0.79767489999999996, 0.1351917, 0.031353399999999997},
+        {0.28804020000000002,0.71187409999999995,8.5699999999999996e-05 },
+        {0,0,0.82521}}; //i took it from "ProPhoto"
+    lumimul[0] = wprof[1][0];
+    lumimul[1] = wprof[1][1];
+    lumimul[2] = wprof[1][2];
+    int W = width;
+    int H = hight;
 
+    float lumimulf[3] = {static_cast<float>(lumimul[0]), static_cast<float>(lumimul[1]), static_cast<float>(lumimul[2])};
+
+    // calculate histogram of the y channel needed for contrast curve calculation in exposure adjustments
+    histogram.clear();
+
+    if (true) {
+
+#ifdef _OPENMP
+        const int numThreads = min(max(W * H / (int)histogram.getSize(), 1), omp_get_max_threads());
+#pragma omp parallel num_threads(numThreads) if(numThreads>1)
+#endif
+        {
+            LUTu hist(histogram.getSize());
+            hist.clear();
+#ifdef _OPENMP
+#pragma omp for nowait
+#endif
+
+            for (int i = 0; i < H; i++) {
+                for (int j = 0; j < W; j++) {
+
+                    // float r = original->r(i, j);
+                    // float g = original->g(i, j);
+                    // float b = original->b(i, j);
+                    float r = (*pixel_buf.ConstPixel_uint16(i, j, 0));
+                    float g =(*pixel_buf.ConstPixel_uint16(i, j, 1));
+                    float b = (*pixel_buf.ConstPixel_uint16(i, j, 2));
+                    int y = (lumimulf[0] * r + lumimulf[1] * g + lumimulf[2] * b);
+                    hist[y]++;
+                }
+            }
+
+#ifdef _OPENMP
+#pragma omp critical
+#endif
+            histogram += hist;
+
+        }
+#ifdef _OPENMP
+        static_cast<void>(numThreads);  // to silence cppcheck warning
+#endif
+    } else {
+        for (int i = 0; i < H; i++) {
+            for (int j = 0; j < W; j++) {
+
+                // float r = original->r(i, j);
+                // float g = original->g(i, j);
+                // float b = original->b(i, j);
+                float r = (*pixel_buf.ConstPixel_uint16(i, j, 0));
+                float g =(*pixel_buf.ConstPixel_uint16(i, j, 1));
+                float b = (*pixel_buf.ConstPixel_uint16(i, j, 2));
+
+                int y = (lumimulf[0] * r + lumimulf[1] * g + lumimulf[2] * b);
+                histogram[y]++;
+            }
+        }
+    }
+}
 
 void mini_rt::firstAnalysis(dng_pixel_buffer& pixel_buf, int width, int hight, LUTu & histogram)
 {

@@ -55,8 +55,11 @@ static void executeAreaThread(std::reference_wrapper<dng_area_task> task, uint32
    catch (...) { threadException = std::current_exception(); }
 }
 
+#include <chrono>
 
 void DngHost::PerformAreaTask(dng_area_task &task, const dng_rect &area, dng_area_task_progress *progress) {
+    auto start = std::chrono::high_resolution_clock::now();
+
   std::cout << "DngHost::PerformAreaTask" << std::endl;
     dng_point tileSize(task.FindTileSize(area));
 
@@ -94,7 +97,10 @@ void DngHost::PerformAreaTask(dng_area_task &task, const dng_rect &area, dng_are
         threadArea.b = Min_int32(threadArea.b + (vTilesPerThread * tileSize.v), area.b);
         threadArea.r = area.l + (hTilesPerThread * tileSize.h);
     }
+    auto end = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double, std::milli> elapsed = end - start;
 
+    std::cout << "PerformAreaTask time: " << elapsed.count() << " ms" << std::endl;
    for (auto& areaThread : areaThreads) areaThread.join();
    if (threadException) std::rethrow_exception(threadException);
 
